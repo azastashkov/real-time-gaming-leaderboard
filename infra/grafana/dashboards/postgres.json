@@ -1,0 +1,52 @@
+{
+  "title": "Postgres",
+  "uid": "postgres",
+  "schemaVersion": 39,
+  "version": 1,
+  "tags": ["postgres"],
+  "timezone": "browser",
+  "refresh": "5s",
+  "time": { "from": "now-15m", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Active connections",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        { "expr": "pg_stat_database_numbackends{datname=\"leaderboard\"}", "legendFormat": "backends", "refId": "A" }
+      ],
+      "datasource": { "type": "prometheus", "uid": "prometheus" }
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Transactions/sec",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "expr": "rate(pg_stat_database_xact_commit{datname=\"leaderboard\"}[1m])",
+          "legendFormat": "commits", "refId": "A"
+        },
+        {
+          "expr": "rate(pg_stat_database_xact_rollback{datname=\"leaderboard\"}[1m])",
+          "legendFormat": "rollbacks", "refId": "B"
+        }
+      ],
+      "datasource": { "type": "prometheus", "uid": "prometheus" }
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Tuples returned/fetched/inserted/sec",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 8 },
+      "targets": [
+        { "expr": "rate(pg_stat_database_tup_returned{datname=\"leaderboard\"}[1m])", "legendFormat": "returned", "refId": "A" },
+        { "expr": "rate(pg_stat_database_tup_fetched{datname=\"leaderboard\"}[1m])", "legendFormat": "fetched", "refId": "B" },
+        { "expr": "rate(pg_stat_database_tup_inserted{datname=\"leaderboard\"}[1m])", "legendFormat": "inserted", "refId": "C" },
+        { "expr": "rate(pg_stat_database_tup_updated{datname=\"leaderboard\"}[1m])", "legendFormat": "updated", "refId": "D" }
+      ],
+      "datasource": { "type": "prometheus", "uid": "prometheus" }
+    }
+  ]
+}

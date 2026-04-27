@@ -1,0 +1,33 @@
+global:
+  scrape_interval: 5s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'leaderboard-app'
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['app-1:8080']
+        labels:
+          instance: app-1
+      - targets: ['app-2:8080']
+        labels:
+          instance: app-2
+
+  - job_name: 'load-client'
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['load-client:8888']
+        labels:
+          instance: load-client
+
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']

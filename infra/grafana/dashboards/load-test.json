@@ -1,0 +1,103 @@
+{
+  "title": "Load Test Client",
+  "uid": "load-test",
+  "schemaVersion": 39,
+  "version": 1,
+  "tags": ["load-test"],
+  "timezone": "browser",
+  "refresh": "5s",
+  "time": { "from": "now-15m", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Active WS connections",
+      "gridPos": { "h": 4, "w": 8, "x": 0, "y": 0 },
+      "targets": [
+        { "expr": "loadtest_ws_connections_active", "refId": "A" }
+      ],
+      "datasource": { "type": "prometheus", "uid": "prometheus" }
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Score errors (total)",
+      "gridPos": { "h": 4, "w": 8, "x": 8, "y": 0 },
+      "targets": [
+        { "expr": "loadtest_score_errors_total", "refId": "A" }
+      ],
+      "datasource": { "type": "prometheus", "uid": "prometheus" }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Read errors (total)",
+      "gridPos": { "h": 4, "w": 8, "x": 16, "y": 0 },
+      "targets": [
+        { "expr": "sum(loadtest_read_errors_total)", "refId": "A" }
+      ],
+      "datasource": { "type": "prometheus", "uid": "prometheus" }
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Score submit p99 latency (s)",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(loadtest_score_duration_seconds_bucket[1m])))",
+          "legendFormat": "p99",
+          "refId": "A"
+        },
+        {
+          "expr": "histogram_quantile(0.50, sum by (le) (rate(loadtest_score_duration_seconds_bucket[1m])))",
+          "legendFormat": "p50",
+          "refId": "B"
+        }
+      ],
+      "datasource": { "type": "prometheus", "uid": "prometheus" }
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Read p99 latency by endpoint (s)",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, sum by (le, endpoint) (rate(loadtest_read_duration_seconds_bucket[1m])))",
+          "legendFormat": "p99 {{endpoint}}",
+          "refId": "A"
+        }
+      ],
+      "datasource": { "type": "prometheus", "uid": "prometheus" }
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "WS frames received/sec",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+      "targets": [
+        {
+          "expr": "rate(loadtest_ws_frames_total[1m])",
+          "legendFormat": "{{destination}}",
+          "refId": "A"
+        }
+      ],
+      "datasource": { "type": "prometheus", "uid": "prometheus" }
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Score submit rate",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+      "targets": [
+        {
+          "expr": "sum(rate(loadtest_score_duration_seconds_count[1m]))",
+          "legendFormat": "scores/sec",
+          "refId": "A"
+        }
+      ],
+      "datasource": { "type": "prometheus", "uid": "prometheus" }
+    }
+  ]
+}

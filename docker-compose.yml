@@ -1,0 +1,234 @@
+x-app-base: &app-base
+  build:
+    context: .
+    dockerfile: leaderboard-app/Dockerfile
+  image: leaderboard-app:latest
+  environment:
+    SPRING_PROFILES_ACTIVE: docker
+    POSTGRES_HOST: postgres
+    POSTGRES_PORT: "5432"
+    POSTGRES_DB: leaderboard
+    POSTGRES_USER: leaderboard
+    POSTGRES_PASSWORD: leaderboard
+    REDIS_NODES: redis-node-1:6379,redis-node-2:6379,redis-node-3:6379,redis-node-4:6379,redis-node-5:6379,redis-node-6:6379
+    JWT_SECRET: dev-secret-please-change-in-prod-32bytes-min-9876
+    JWT_TTL: PT2H
+    LEADERBOARD_PARTITIONS: "4"
+    LEADERBOARD_BROADCAST_INTERVAL_MS: "1000"
+  depends_on:
+    postgres:
+      condition: service_healthy
+    redis-node-6:
+      condition: service_healthy
+  restart: unless-stopped
+  networks: [leaderboard-net]
+
+x-redis-base: &redis-base
+  image: bitnamilegacy/redis-cluster:7.4
+  environment: &redis-env
+    ALLOW_EMPTY_PASSWORD: "yes"
+    REDIS_NODES: "redis-node-1 redis-node-2 redis-node-3 redis-node-4 redis-node-5 redis-node-6"
+  healthcheck:
+    test: ["CMD-SHELL", "redis-cli -p 6379 ping | grep -q PONG"]
+    interval: 5s
+    timeout: 3s
+    retries: 30
+    start_period: 5s
+  restart: unless-stopped
+  networks: [leaderboard-net]
+
+services:
+  nginx:
+    image: nginx:1.27-alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./infra/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      app-1:
+        condition: service_healthy
+      app-2:
+        condition: service_healthy
+    restart: unless-stopped
+    networks: [leaderboard-net]
+
+  app-1:
+    <<: *app-base
+    container_name: leaderboard-app-1
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      APP_INSTANCE: app-1
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      POSTGRES_DB: leaderboard
+      POSTGRES_USER: leaderboard
+      POSTGRES_PASSWORD: leaderboard
+      REDIS_NODES: redis-node-1:6379,redis-node-2:6379,redis-node-3:6379,redis-node-4:6379,redis-node-5:6379,redis-node-6:6379
+      JWT_SECRET: dev-secret-please-change-in-prod-32bytes-min-9876
+      JWT_TTL: PT2H
+      LEADERBOARD_PARTITIONS: "4"
+      LEADERBOARD_BROADCAST_INTERVAL_MS: "1000"
+
+  app-2:
+    <<: *app-base
+    container_name: leaderboard-app-2
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      APP_INSTANCE: app-2
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      POSTGRES_DB: leaderboard
+      POSTGRES_USER: leaderboard
+      POSTGRES_PASSWORD: leaderboard
+      REDIS_NODES: redis-node-1:6379,redis-node-2:6379,redis-node-3:6379,redis-node-4:6379,redis-node-5:6379,redis-node-6:6379
+      JWT_SECRET: dev-secret-please-change-in-prod-32bytes-min-9876
+      JWT_TTL: PT2H
+      LEADERBOARD_PARTITIONS: "4"
+      LEADERBOARD_BROADCAST_INTERVAL_MS: "1000"
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: leaderboard
+      POSTGRES_PASSWORD: leaderboard
+      POSTGRES_DB: leaderboard
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U leaderboard -d leaderboard"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+    networks: [leaderboard-net]
+
+  redis-node-1:
+    <<: *redis-base
+    volumes: [redis-1-data:/bitnami/redis/data]
+
+  redis-node-2:
+    <<: *redis-base
+    volumes: [redis-2-data:/bitnami/redis/data]
+
+  redis-node-3:
+    <<: *redis-base
+    volumes: [redis-3-data:/bitnami/redis/data]
+
+  redis-node-4:
+    <<: *redis-base
+    volumes: [redis-4-data:/bitnami/redis/data]
+
+  redis-node-5:
+    <<: *redis-base
+    volumes: [redis-5-data:/bitnami/redis/data]
+
+  redis-node-6:
+    image: bitnamilegacy/redis-cluster:7.4
+    environment:
+      ALLOW_EMPTY_PASSWORD: "yes"
+      REDIS_NODES: "redis-node-1 redis-node-2 redis-node-3 redis-node-4 redis-node-5 redis-node-6"
+      REDIS_CLUSTER_REPLICAS: "1"
+      REDIS_CLUSTER_CREATOR: "yes"
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -p 6379 cluster info | grep -q cluster_state:ok"]
+      interval: 5s
+      timeout: 3s
+      retries: 60
+      start_period: 60s
+    volumes: [redis-6-data:/bitnami/redis/data]
+    restart: unless-stopped
+    networks: [leaderboard-net]
+
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.66.0
+    environment:
+      REDIS_ADDR: redis://redis-node-1:6379
+      REDIS_EXPORTER_IS_CLUSTER: "true"
+    depends_on:
+      redis-node-6:
+        condition: service_healthy
+    restart: unless-stopped
+    networks: [leaderboard-net]
+
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.16.0
+    environment:
+      DATA_SOURCE_NAME: "postgresql://leaderboard:leaderboard@postgres:5432/leaderboard?sslmode=disable"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    networks: [leaderboard-net]
+
+  prometheus:
+    image: prom/prometheus:v2.55.0
+    volumes:
+      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prom-data:/prometheus
+    ports:
+      - "9091:9090"
+    restart: unless-stopped
+    networks: [leaderboard-net]
+
+  grafana:
+    image: grafana/grafana:11.3.0
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+    volumes:
+      - ./infra/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./infra/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "3001:3000"
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+    networks: [leaderboard-net]
+
+  load-client:
+    profiles: [test]
+    build:
+      context: .
+      dockerfile: load-test-client/Dockerfile
+    image: load-test-client:latest
+    container_name: leaderboard-load-client
+    environment:
+      TARGET_BASE_URL: http://nginx:80
+      TARGET_WS_URL: ws://nginx:80/ws
+      NUM_PLAYERS: "200"
+      RAMP_UP_SECONDS: "10"
+      DURATION_SECONDS: "120"
+      HOLD_AFTER_SECONDS: "30"
+      CYCLE_INTERVAL_MS: "1000"
+      WS_SUBSCRIBERS: "25"
+      REGISTER_CONCURRENCY: "16"
+      EXIT_AFTER_RUN: "true"
+    ports:
+      - "8888:8888"
+    depends_on:
+      nginx:
+        condition: service_started
+      app-1:
+        condition: service_healthy
+      app-2:
+        condition: service_healthy
+    networks: [leaderboard-net]
+
+networks:
+  leaderboard-net:
+    driver: bridge
+
+volumes:
+  pgdata:
+  redis-1-data:
+  redis-2-data:
+  redis-3-data:
+  redis-4-data:
+  redis-5-data:
+  redis-6-data:
+  prom-data:
+  grafana-data:

@@ -1,0 +1,22 @@
+plugins {
+    id 'org.springframework.boot'
+}
+
+apply plugin: 'io.spring.dependency-management'
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-websocket'
+
+    implementation 'io.micrometer:micrometer-registry-prometheus'
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+bootJar {
+    archiveFileName = 'load-test-client.jar'
+    mainClass = 'com.realtimegaming.loadclient.LoadClientApplication'
+}

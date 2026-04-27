@@ -1,0 +1,4 @@
+rootProject.name = 'real-time-gaming-leaderboard'
+
+include 'leaderboard-app'
+include 'load-test-client'

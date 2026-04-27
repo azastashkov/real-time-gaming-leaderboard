@@ -1,0 +1,153 @@
+{
+  "title": "Leaderboard App",
+  "uid": "leaderboard-app",
+  "schemaVersion": 39,
+  "version": 1,
+  "tags": ["leaderboard"],
+  "timezone": "browser",
+  "refresh": "5s",
+  "time": { "from": "now-15m", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "HTTP requests/sec by endpoint",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "sum by (uri) (rate(http_server_requests_seconds_count{app=\"leaderboard\"}[1m]))",
+          "legendFormat": "{{uri}}",
+          "refId": "A"
+        }
+      ],
+      "datasource": { "type": "prometheus", "uid": "prometheus" }
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "HTTP latency p99 by endpoint (s)",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, sum by (le, uri) (rate(http_server_requests_seconds_bucket{app=\"leaderboard\"}[1m])))",
+          "legendFormat": "p99 {{uri}}",
+          "refId": "A"
+        }
+      ],
+      "datasource": { "type": "prometheus", "uid": "prometheus" }
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "RPS per instance",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "expr": "sum by (instance) (rate(http_server_requests_seconds_count{app=\"leaderboard\"}[1m]))",
+          "legendFormat": "{{instance}}",
+          "refId": "A"
+        }
+      ],
+      "datasource": { "type": "prometheus", "uid": "prometheus" }
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "5xx error rate",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "targets": [
+        {
+          "expr": "sum(rate(http_server_requests_seconds_count{app=\"leaderboard\",status=~\"5..\"}[1m]))",
+          "legendFormat": "5xx",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(rate(http_server_requests_seconds_count{app=\"leaderboard\",status=~\"4..\"}[1m]))",
+          "legendFormat": "4xx",
+          "refId": "B"
+        }
+      ],
+      "datasource": { "type": "prometheus", "uid": "prometheus" }
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Scores submitted/sec",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 16 },
+      "targets": [
+        {
+          "expr": "sum(rate(leaderboard_scores_submitted_total[1m]))",
+          "legendFormat": "scores/sec",
+          "refId": "A"
+        }
+      ],
+      "datasource": { "type": "prometheus", "uid": "prometheus" }
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Top10 broadcasts/sec",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 16 },
+      "targets": [
+        {
+          "expr": "sum(rate(leaderboard_broadcasts_total[1m]))",
+          "legendFormat": "broadcasts/sec",
+          "refId": "A"
+        }
+      ],
+      "datasource": { "type": "prometheus", "uid": "prometheus" }
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Leaderboard query latency p99 (s)",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 16 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(leaderboard_top_duration_seconds_bucket[1m])))",
+          "legendFormat": "top p99",
+          "refId": "A"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(leaderboard_rank_duration_seconds_bucket[1m])))",
+          "legendFormat": "rank p99",
+          "refId": "B"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(leaderboard_neighbors_duration_seconds_bucket[1m])))",
+          "legendFormat": "neighbors p99",
+          "refId": "C"
+        }
+      ],
+      "datasource": { "type": "prometheus", "uid": "prometheus" }
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "JVM heap used (MB)",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
+      "targets": [
+        {
+          "expr": "sum by (instance) (jvm_memory_used_bytes{area=\"heap\",app=\"leaderboard\"}) / 1048576",
+          "legendFormat": "{{instance}}",
+          "refId": "A"
+        }
+      ],
+      "datasource": { "type": "prometheus", "uid": "prometheus" }
+    },
+    {
+      "id": 9,
+      "type": "timeseries",
+      "title": "JVM threads",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
+      "targets": [
+        {
+          "expr": "sum by (instance) (jvm_threads_live_threads{app=\"leaderboard\"})",
+          "legendFormat": "{{instance}}",
+          "refId": "A"
+        }
+      ],
+      "datasource": { "type": "prometheus", "uid": "prometheus" }
+    }
+  ]
+}

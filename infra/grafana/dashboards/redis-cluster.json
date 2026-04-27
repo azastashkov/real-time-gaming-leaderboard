@@ -1,0 +1,80 @@
+{
+  "title": "Redis Cluster",
+  "uid": "redis-cluster",
+  "schemaVersion": 39,
+  "version": 1,
+  "tags": ["redis"],
+  "timezone": "browser",
+  "refresh": "5s",
+  "time": { "from": "now-15m", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Cluster state",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "targets": [
+        { "expr": "redis_cluster_enabled", "legendFormat": "cluster enabled", "refId": "A" }
+      ],
+      "datasource": { "type": "prometheus", "uid": "prometheus" }
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Connected clients",
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+      "targets": [
+        { "expr": "redis_connected_clients", "refId": "A" }
+      ],
+      "datasource": { "type": "prometheus", "uid": "prometheus" }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Used memory (MB)",
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
+      "targets": [
+        { "expr": "redis_memory_used_bytes / 1048576", "refId": "A" }
+      ],
+      "datasource": { "type": "prometheus", "uid": "prometheus" }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Total keys",
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
+      "targets": [
+        { "expr": "sum(redis_db_keys)", "refId": "A" }
+      ],
+      "datasource": { "type": "prometheus", "uid": "prometheus" }
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Commands/sec",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "targets": [
+        {
+          "expr": "rate(redis_commands_processed_total[1m])",
+          "legendFormat": "{{addr}}",
+          "refId": "A"
+        }
+      ],
+      "datasource": { "type": "prometheus", "uid": "prometheus" }
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Pub/Sub channels",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "targets": [
+        {
+          "expr": "redis_pubsub_channels",
+          "legendFormat": "{{addr}}",
+          "refId": "A"
+        }
+      ],
+      "datasource": { "type": "prometheus", "uid": "prometheus" }
+    }
+  ]
+}

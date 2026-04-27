@@ -1,0 +1,37 @@
+spring:
+  application:
+    name: load-test-client
+  threads:
+    virtual:
+      enabled: true
+  main:
+    web-application-type: servlet
+
+server:
+  port: 8888
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      show-details: always
+
+loadtest:
+  base-url: ${TARGET_BASE_URL:http://localhost}
+  ws-url: ${TARGET_WS_URL:ws://localhost/ws}
+  num-players: ${NUM_PLAYERS:200}
+  ramp-up-seconds: ${RAMP_UP_SECONDS:10}
+  duration-seconds: ${DURATION_SECONDS:60}
+  hold-after-seconds: ${HOLD_AFTER_SECONDS:30}
+  cycle-interval-ms: ${CYCLE_INTERVAL_MS:1000}
+  ws-subscribers: ${WS_SUBSCRIBERS:25}
+  register-concurrency: ${REGISTER_CONCURRENCY:16}
+  exit-after-run: ${EXIT_AFTER_RUN:true}
+
+logging:
+  level:
+    com.realtimegaming.loadclient: INFO
+    org.springframework.web.socket: WARN
