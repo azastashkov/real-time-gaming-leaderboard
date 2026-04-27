@@ -18,6 +18,11 @@ management:
   endpoint:
     health:
       show-details: always
+  metrics:
+    distribution:
+      percentiles-histogram:
+        loadtest.score.duration: true
+        loadtest.read.duration: true
 
 loadtest:
   base-url: ${TARGET_BASE_URL:http://localhost}
